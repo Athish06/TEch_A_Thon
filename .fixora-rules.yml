@@ -1,0 +1,244 @@
+rules:
+- id: fixora-wrapper-load-intents
+  patterns:
+  - pattern-inside: "def load_intents(...):\n  ..."
+  - pattern-either:
+    - pattern: open(...)
+    - pattern: $OBJ.open(...)
+  message: '### Path Traversal via `file_path`
+
+
+    **Vulnerable Sink:** Passes untrusted data directly to `open`.
+
+
+    **Live Exploit Vector:**
+
+    ```python\n// Target Function: load_intents()\n// Parameter: file_path\n\n// Attacker
+    executes:\nload_intents(file_path = ../sensitive_data.txt)\n```
+
+
+    **Outcome:**
+
+    An attacker could manipulate the file_path to access sensitive files outside the
+    intended directory.
+
+
+    **Data at Risk (Impact):**
+
+    An attacker could read sensitive data, potentially leading to information disclosure.'
+  severity: WARNING
+  languages:
+  - python
+  metadata:
+    category: security
+    technology:
+    - python
+    source: fixora-ai-analysis
+    vulnerability_type: Path Traversal
+    confidence: MEDIUM
+    wrapper_defined_in: backend/model.py
+    wraps:
+    - open
+    modules_used:
+    - builtins
+    vulnerable_parameter: file_path
+    malicious_payload: ../sensitive_data.txt
+    exploit_explanation: An attacker could manipulate the file_path to access sensitive
+      files outside the intended directory.
+    exploit_injected_example: load_intents(file_path = ../sensitive_data.txt)
+    impact_summary: An attacker could read sensitive data, potentially leading to
+      information disclosure.
+    cwe:
+    - CWE-22
+    owasp:
+    - A01:2021
+- id: fixora-wrapper-process-input
+  patterns:
+  - pattern-inside: "def process_input(...):\n  ..."
+  - pattern-either:
+    - pattern: process_user_input(...)
+    - pattern: $OBJ.process_user_input(...)
+    - pattern: jsonify(...)
+    - pattern: $OBJ.jsonify(...)
+  message: '### Missing Authentication via `request.json[''user_input'']`
+
+
+    **Vulnerable Sink:** Passes untrusted data directly to `process_user_input, jsonify`.
+
+
+    **Live Exploit Vector:**
+
+    ```python\n// Target Function: process_input()\n// Parameter: request.json[''user_input'']\n\n//
+    Attacker executes:\nprocess_input(request.json[''user_input''] = <malicious_data>)\n```
+
+
+    **Outcome:**
+
+    An attacker could send malicious input without being authenticated, potentially
+    leading to unauthorized access or data tampering.
+
+
+    **Data at Risk (Impact):**
+
+    An attacker could access or modify sensitive data, potentially leading to security
+    breaches or data loss.'
+  severity: ERROR
+  languages:
+  - python
+  metadata:
+    category: security
+    technology:
+    - python
+    source: fixora-ai-analysis
+    vulnerability_type: Missing Authentication
+    confidence: HIGH
+    wrapper_defined_in: backend/app.py
+    wraps:
+    - process_user_input
+    - jsonify
+    modules_used:
+    - flask
+    - model
+    vulnerable_parameter: request.json['user_input']
+    malicious_payload: <malicious_data>
+    exploit_explanation: An attacker could send malicious input without being authenticated,
+      potentially leading to unauthorized access or data tampering.
+    exploit_injected_example: process_input(request.json['user_input'] = <malicious_data>)
+    impact_summary: An attacker could access or modify sensitive data, potentially
+      leading to security breaches or data loss.
+    cwe:
+    - CWE-306
+    owasp:
+    - A01:2021
+- id: fixora-wrapper-handlesendmessage
+  patterns:
+  - pattern-either:
+    - pattern: function handleSendMessage(...) { ... }
+    - pattern: const handleSendMessage = (...) => { ... }
+    - pattern: let handleSendMessage = (...) => { ... }
+    - pattern: var handleSendMessage = (...) => { ... }
+    - pattern: this.handleSendMessage = (...) => { ... }
+    - pattern: this.handleSendMessage = function(...) { ... }
+    - pattern: 'handleSendMessage: (...) => { ... }'
+    - pattern: 'handleSendMessage: function(...) { ... }'
+    - pattern: handleSendMessage(...) { ... }
+    - pattern: handleSendMessage = (...) => { ... }
+    - pattern: handleSendMessage = function(...) { ... }
+  - pattern-either:
+    - pattern: fetch(...)
+    - pattern: $OBJ.fetch(...)
+  message: '### XSS via `inputMessage`
+
+
+    **Vulnerable Sink:** Passes untrusted data directly to `fetch`.
+
+
+    **Live Exploit Vector:**
+
+    ```javascript\n// Target Function: handleSendMessage()\n// Parameter: inputMessage\n\n//
+    Attacker executes:\nhandleSendMessage(inputMessage = <script>alert(''XSS'')</script>)\n```
+
+
+    **Outcome:**
+
+    The attacker-controlled inputMessage is sent to the server and potentially executed,
+    allowing for XSS attacks.
+
+
+    **Data at Risk (Impact):**
+
+    Attackers can inject malicious scripts, steal user data, or take control of the
+    user''s session.'
+  severity: WARNING
+  languages:
+  - javascript
+  - typescript
+  metadata:
+    category: security
+    technology:
+    - javascript
+    - typescript
+    source: fixora-ai-analysis
+    vulnerability_type: XSS
+    confidence: MEDIUM
+    wrapper_defined_in: Frontend/src/components/ChatbotPage.js
+    wraps:
+    - fetch
+    modules_used:
+    - builtins
+    vulnerable_parameter: inputMessage
+    malicious_payload: <script>alert('XSS')</script>
+    exploit_explanation: The attacker-controlled inputMessage is sent to the server
+      and potentially executed, allowing for XSS attacks.
+    exploit_injected_example: handleSendMessage(inputMessage = <script>alert('XSS')</script>)
+    impact_summary: Attackers can inject malicious scripts, steal user data, or take
+      control of the user's session.
+    cwe: &id001
+    - CWE-79
+    owasp: &id002
+    - A03:2021
+- id: fixora-wrapper-gamepage
+  patterns:
+  - pattern-either:
+    - pattern: function GamePage(...) { ... }
+    - pattern: const GamePage = (...) => { ... }
+    - pattern: let GamePage = (...) => { ... }
+    - pattern: var GamePage = (...) => { ... }
+    - pattern: this.GamePage = (...) => { ... }
+    - pattern: this.GamePage = function(...) { ... }
+    - pattern: 'GamePage: (...) => { ... }'
+    - pattern: 'GamePage: function(...) { ... }'
+    - pattern: GamePage(...) { ... }
+    - pattern: GamePage = (...) => { ... }
+    - pattern: GamePage = function(...) { ... }
+  - pattern-either:
+    - pattern: useParams(...)
+    - pattern: $OBJ.useParams(...)
+  message: '### XSS via `id`
+
+
+    **Vulnerable Sink:** Passes untrusted data directly to `useParams`.
+
+
+    **Live Exploit Vector:**
+
+    ```javascript\n// Target Function: GamePage()\n// Parameter: id\n\n// Attacker
+    executes:\nGamePage(id = <script>alert(''XSS'')</script>)\n```
+
+
+    **Outcome:**
+
+    The attacker-controlled id parameter is used in the component, potentially allowing
+    for XSS attacks.
+
+
+    **Data at Risk (Impact):**
+
+    Attackers can inject malicious scripts, steal user data, or take control of the
+    user''s session.'
+  severity: WARNING
+  languages:
+  - javascript
+  - typescript
+  metadata:
+    category: security
+    technology:
+    - javascript
+    - typescript
+    source: fixora-ai-analysis
+    vulnerability_type: XSS
+    confidence: MEDIUM
+    wrapper_defined_in: Frontend/src/components/GamePage.js
+    wraps:
+    - useParams
+    modules_used:
+    - react-router-dom
+    vulnerable_parameter: id
+    malicious_payload: <script>alert('XSS')</script>
+    exploit_explanation: The attacker-controlled id parameter is used in the component,
+      potentially allowing for XSS attacks.
+    exploit_injected_example: GamePage(id = <script>alert('XSS')</script>)
+    impact_summary: Attackers can inject malicious scripts, steal user data, or take
+      control of the user's session.
+    cwe: *id001
+    owasp: *id002
